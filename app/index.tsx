@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
-    const { messages, loading, error, fetchMessages, addMessage } = useMessageStore();
+    const { messages, loading, error, fetchMessages, postMessage } = useMessageStore();
     const [inputText, setInputText] = useState('');
 
     // Fetch messages on component mount
@@ -31,9 +31,9 @@ export default function HomeScreen() {
         }
     }, [error]);
 
-    const handleSendMessage = () => {
+    const handleSendMessage = async () => {
         if (inputText.trim()) {
-            addMessage(inputText);
+            await postMessage(inputText);
             setInputText('');
         }
     };

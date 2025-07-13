@@ -1,5 +1,5 @@
+import { MessagesApi } from '@/api-client/messages-api';
 import { TMessageJSON } from '@/api-client/types';
-import { useMessages } from '@/hooks/useMessages';
 import { create } from 'zustand';
 
 export interface MessageState {
@@ -8,41 +8,60 @@ export interface MessageState {
   error: string | null;
   fetchMessages: () => Promise<void>;
   addMessage: (text: string) => void;
+  postMessage: (text: string) => Promise<TMessageJSON | null>;
   clearError: () => void;
 }
 
-export const useMessageStore = create<MessageState>((set, get) => {
-  // Use the hook to get the fetchMessages function
-  const { fetchMessages: fetchMessagesFromHook } = useMessages();
+export const useMessageStore = create<MessageState>((set, get) => ({
+  messages: [],
+  loading: false,
+  error: null,
 
-  return {
-    messages: [],
-    loading: false,
-    error: null,
+  fetchMessages: async () => {
+    set({ loading: true, error: null });
+    try {
+      const messages = await MessagesApi.getAllMessages();
+      set({ messages, loading: false });
+      console.log('Messages fetched and stored:', messages);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch messages';
+      set({ error: errorMessage, loading: false });
+      console.error('Error fetching messages:', error);
+    }
+  },
 
-    fetchMessages: async () => {
-      set({ loading: true, error: null });
-      await fetchMessagesFromHook(
-        (messages) => set({ messages, loading: false }),
-        (error) => set({ error, loading: false })
-      );
-    },
+  addMessage: (text: string) => {
+    const newMessage: TMessageJSON = {
+      id: Date.now().toString(),
+      text: text.trim(),
+      isUser: true,
+      timestamp: new Date().toISOString(),
+    };
+    set((state) => ({
+      messages: [newMessage, ...state.messages],
+    }));
+    console.log('Message added to store:', newMessage);
+  },
 
-    addMessage: (text: string) => {
-      const newMessage: TMessageJSON = {
-        id: Date.now().toString(),
-        text: text.trim(),
-        isUser: true,
-        timestamp: new Date().toISOString(),
-      };
+  postMessage: async (text: string) => {
+    set({ loading: true, error: null });
+    try {
+      const postedMessage = await MessagesApi.postMessage(text);
       set((state) => ({
-        messages: [newMessage, ...state.messages],
+        messages: [postedMessage, ...state.messages],
+        loading: false,
       }));
-      console.log('Message added to store:', newMessage);
-    },
+      console.log('Message posted and added to store:', postedMessage);
+      return postedMessage;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to post message';
+      set({ error: errorMessage, loading: false });
+      console.error('Error posting message:', err);
+      return null;
+    }
+  },
 
-    clearError: () => {
-      set({ error: null });
-    },
-  };
-}); 
+  clearError: () => {
+    set({ error: null });
+  },
+})); 
