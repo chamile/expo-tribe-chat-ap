@@ -1,43 +1,23 @@
 import { MessagesApi } from '@/api-client/messages-api';
 import { TMessageJSON } from '@/api-client/types';
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
-interface UseMessagesReturn {
-  messages: TMessageJSON[];
-  loading: boolean;
-  error: string | null;
-}
-
-export const useMessages = (): UseMessagesReturn => {
-  const [messages, setMessages] = useState<TMessageJSON[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchMessages = async (): Promise<void> => {
+/**
+ * useMessages
+ * Returns a fetchMessages function that fetches messages and calls the provided callback with the result.
+ */
+export function useMessages() {
+  const fetchMessages = useCallback(async (onSuccess: (messages: TMessageJSON[]) => void, onError?: (error: string) => void) => {
     try {
-      setLoading(true);
-      setError(null);
-      
       const fetchedMessages = await MessagesApi.getAllMessages();
-      setMessages(fetchedMessages);
-      
-      console.log('Fetched messages:', fetchedMessages);
+      onSuccess(fetchedMessages);
+      console.log('Fetched messages (from hook):', fetchedMessages);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch messages';
-      setError(errorMessage);
-      console.error('Error fetching messages:', err);
-    } finally {
-      setLoading(false);
+      if (onError) onError(errorMessage);
+      console.error('Error fetching messages (from hook):', err);
     }
-  };
-
-  useEffect(() => {
-    fetchMessages();
   }, []);
 
-  return {
-    messages,
-    loading,
-    error,
-  };
-}; 
+  return { fetchMessages };
+} 

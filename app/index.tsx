@@ -1,44 +1,44 @@
-import { useMessages } from '@/hooks/useMessages';
-import React, { useState } from 'react';
+import { useMessageStore } from '@/stores';
+import React, { useEffect, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-interface Message {
-    id: string;
-    text: string;
-    isUser: boolean;
-}
-
 export default function HomeScreen() {
-    const { messages, loading, error } = useMessages();
+    const { messages, loading, error, fetchMessages, addMessage } = useMessageStore();
     const [inputText, setInputText] = useState('');
 
-    // Console log API messages when they change
-    React.useEffect(() => {
+    // Fetch messages on component mount
+    useEffect(() => {
+        fetchMessages();
+    }, [fetchMessages]);
+
+    // Console log messages when they change
+    useEffect(() => {
         if (messages.length > 0) {
-            console.log('API Messages loaded:', JSON.stringify(messages, null, 2));
+            console.log('Messages in store:', JSON.stringify(messages, null, 2));
         }
     }, [messages]);
 
     // Console log loading and error states
-    React.useEffect(() => {
+    useEffect(() => {
         if (loading) {
             console.log('Loading messages from API...');
         }
     }, [loading]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (error) {
             console.log('Error loading messages:', error);
         }
     }, [error]);
 
-    const addMessage = () => {
+    const handleSendMessage = () => {
         if (inputText.trim()) {
+            addMessage(inputText);
             setInputText('');
         }
     };
 
-    const renderMessage = ({ item }: { item: Message }) => (
+    const renderMessage = ({ item }: { item: any }) => (
         <View style={[
             styles.messageContainer,
             item.isUser ? styles.userMessage : styles.botMessage
@@ -84,7 +84,7 @@ export default function HomeScreen() {
                 />
                 <TouchableOpacity
                     style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-                    onPress={addMessage}
+                    onPress={handleSendMessage}
                     disabled={!inputText.trim()}
                 >
                     <Text style={styles.sendButtonText}>Send</Text>
