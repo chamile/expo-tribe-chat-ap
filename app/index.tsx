@@ -1,4 +1,6 @@
 import { MessageWithMeta } from '@/api-client/types';
+import { MessageAttachment } from '@/components/MessageAttachment';
+import { MessageReactions } from '@/components/MessageReactions';
 import { useMessageStore } from '@/stores';
 import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -83,7 +85,9 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.messageContainer}>
                     <Text style={styles.messageText}>{item.text}</Text>
+                    <MessageAttachment attachments={item.attachments} />
                 </View>
+                <MessageReactions reactions={item.reactions} />
             </View>
         );
     };
@@ -254,5 +258,21 @@ const styles = StyleSheet.create({
         color: '#888',
         marginLeft: 4,
         fontStyle: 'italic',
+    },
+    reactionsRow: {
+        flexDirection: 'row',
+        marginTop: 8,
+        alignSelf: 'flex-start',
+    },
+    reactionBubble: {
+        backgroundColor: '#e0e0e0',
+        borderRadius: 15,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        marginRight: 5,
+    },
+    reactionText: {
+        fontSize: 12,
+        color: '#333',
     },
 }); 
