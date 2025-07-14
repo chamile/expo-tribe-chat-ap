@@ -65,24 +65,29 @@ export default function HomeScreen() {
     };
 
     // For demo, treat messages as MessageWithMeta if possible
-    const renderMessage = ({ item }: { item: MessageWithMeta }) => {
+    const renderMessage = ({ item, index }: { item: MessageWithMeta; index: number }) => {
         const participant = participantMap[item.authorUuid] || {
             name: 'Unknown',
             avatar: 'https://randomuser.me/api/portraits/lego/1.jpg',
         };
         const isEdited = item.updatedAt > item.sentAt;
+        const prevMessage = index > 0 ? messages[index - 1] : null;
+        const showHeader = !prevMessage || prevMessage.authorUuid !== item.authorUuid;
+
         return (
             <View style={styles.messageWrapper}>
-                <View style={styles.messageHeader}>
-                    <Image source={{ uri: participant.avatar }} style={styles.avatar} />
-                    <View style={styles.headerTextContainer}>
-                        <Text style={styles.participantName}>{participant.name}</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={styles.timeText}>{formatTime(item.sentAt)}</Text>
-                            {isEdited && <Text style={styles.editedLabel}> (edited)</Text>}
+                {showHeader && (
+                    <View style={styles.messageHeader}>
+                        <Image source={{ uri: participant.avatar }} style={styles.avatar} />
+                        <View style={styles.headerTextContainer}>
+                            <Text style={styles.participantName}>{participant.name}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={styles.timeText}>{formatTime(item.sentAt)}</Text>
+                                {isEdited && <Text style={styles.editedLabel}> (edited)</Text>}
+                            </View>
                         </View>
                     </View>
-                </View>
+                )}
                 <View style={styles.messageContainer}>
                     <Text style={styles.messageText}>{item.text}</Text>
                     <MessageAttachment attachments={item.attachments} />
