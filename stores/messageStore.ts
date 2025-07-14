@@ -51,7 +51,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     try {
       const postedMessage = await MessagesApi.postMessage(text) as MessageWithMeta;
       set((state) => ({
-        messages: [postedMessage, ...state.messages],
+        messages: [ ...state.messages,postedMessage],
         loading: false,
       }));
       console.log('Message posted and added to store:', postedMessage);
