@@ -1,6 +1,6 @@
 import { MessageWithMeta } from '@/api-client/types';
 import { useMessageStore } from '@/stores';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 // Mock participant info
@@ -24,10 +24,18 @@ function formatTime(timestamp: number) {
 export default function HomeScreen() {
     const { messages, loading, error, fetchMessages, postMessage } = useMessageStore();
     const [inputText, setInputText] = useState('');
+    const flatListRef = useRef<FlatList>(null);
+    const [shouldScrollToEnd, setShouldScrollToEnd] = useState(true);
 
     useEffect(() => {
         fetchMessages();
     }, [fetchMessages]);
+
+    useEffect(() => {
+        if (messages.length > 0) {
+            setShouldScrollToEnd(true);
+        }
+    }, [messages.length]);
 
     useEffect(() => {
         if (messages.length > 0) {
@@ -92,12 +100,19 @@ export default function HomeScreen() {
             </View>
 
             <FlatList
+                ref={flatListRef}
                 data={messages as MessageWithMeta[]}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.uuid}
                 style={styles.messagesList}
                 contentContainerStyle={styles.messagesContent}
                 showsVerticalScrollIndicator={false}
+                onContentSizeChange={() => {
+                    if (shouldScrollToEnd && flatListRef.current) {
+                        flatListRef.current.scrollToEnd({ animated: false });
+                        setShouldScrollToEnd(false);
+                    }
+                }}
             />
 
             <View style={styles.inputContainer}>
