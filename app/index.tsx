@@ -1,27 +1,9 @@
 import { MessageWithMeta } from '@/api-client/types';
-import { MessageAttachment } from '@/components/MessageAttachment';
-import { MessageReactions } from '@/components/MessageReactions';
+import { ChatInput } from '@/components/ChatInput';
+import { ChatMessage } from '@/components/ChatMessage';
 import { useMessageStore } from '@/stores';
 import React, { useEffect, useRef, useState } from 'react';
-import { FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-// Mock participant info
-const participantMap: Record<string, { name: string; avatar: string }> = {
-    '1f12596f-cee6-4f3c-9495-de1a17623a6b': {
-        name: 'Alice',
-        avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
-    },
-    '3e0c96f5-371b-4e58-bf3d-11f3e77e8f15': {
-        name: 'Bob',
-        avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-    },
-    // Add more mock participants as needed
-};
-
-function formatTime(timestamp: number) {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
+import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen() {
     const { messages, loading, error, fetchMessages, postMessage } = useMessageStore();
@@ -39,62 +21,11 @@ export default function HomeScreen() {
         }
     }, [messages.length]);
 
-    useEffect(() => {
-        if (messages.length > 0) {
-            console.log('Messages in store:', JSON.stringify(messages, null, 2));
-        }
-    }, [messages]);
-
-    useEffect(() => {
-        if (loading) {
-            console.log('Loading messages from API...');
-        }
-    }, [loading]);
-
-    useEffect(() => {
-        if (error) {
-            console.log('Error loading messages:', error);
-        }
-    }, [error]);
-
     const handleSendMessage = async () => {
         if (inputText.trim()) {
             await postMessage(inputText);
             setInputText('');
         }
-    };
-
-    // For demo, treat messages as MessageWithMeta if possible
-    const renderMessage = ({ item, index }: { item: MessageWithMeta; index: number }) => {
-        const participant = participantMap[item.authorUuid] || {
-            name: 'Unknown',
-            avatar: 'https://randomuser.me/api/portraits/lego/1.jpg',
-        };
-        const isEdited = item.updatedAt > item.sentAt;
-        const prevMessage = index > 0 ? messages[index - 1] : null;
-        const showHeader = !prevMessage || prevMessage.authorUuid !== item.authorUuid;
-
-        return (
-            <View style={styles.messageWrapper}>
-                {showHeader && (
-                    <View style={styles.messageHeader}>
-                        <Image source={{ uri: participant.avatar }} style={styles.avatar} />
-                        <View style={styles.headerTextContainer}>
-                            <Text style={styles.participantName}>{participant.name}</Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={styles.timeText}>{formatTime(item.sentAt)}</Text>
-                                {isEdited && <Text style={styles.editedLabel}> (edited)</Text>}
-                            </View>
-                        </View>
-                    </View>
-                )}
-                <View style={styles.messageContainer}>
-                    <Text style={styles.messageText}>{item.text}</Text>
-                    <MessageAttachment attachments={item.attachments} />
-                </View>
-                <MessageReactions reactions={item.reactions} />
-            </View>
-        );
     };
 
     return (
@@ -111,7 +42,9 @@ export default function HomeScreen() {
             <FlatList
                 ref={flatListRef}
                 data={messages as MessageWithMeta[]}
-                renderItem={renderMessage}
+                renderItem={({ item, index }) => (
+                    <ChatMessage item={item} index={index} messages={messages as MessageWithMeta[]} />
+                )}
                 keyExtractor={(item) => item.uuid}
                 style={styles.messagesList}
                 contentContainerStyle={styles.messagesContent}
@@ -123,25 +56,12 @@ export default function HomeScreen() {
                     }
                 }}
             />
-
-            <View style={styles.inputContainer}>
-                <TextInput
-                    style={styles.textInput}
-                    value={inputText}
-                    onChangeText={setInputText}
-                    placeholder="Type a message..."
-                    placeholderTextColor="#999"
-                    multiline
-                    maxLength={500}
-                />
-                <TouchableOpacity
-                    style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-                    onPress={handleSendMessage}
-                    disabled={!inputText.trim()}
-                >
-                    <Text style={styles.sendButtonText}>Send</Text>
-                </TouchableOpacity>
-            </View>
+            <ChatInput
+                inputText={inputText}
+                setInputText={setInputText}
+                onSend={handleSendMessage}
+                loading={loading}
+            />
         </KeyboardAvoidingView>
     );
 }
@@ -179,105 +99,5 @@ const styles = StyleSheet.create({
     messagesContent: {
         padding: 16,
         paddingBottom: 20,
-    },
-    messageWrapper: {
-        marginBottom: 16,
-    },
-    messageHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 4,
-    },
-    avatar: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        marginRight: 10,
-        backgroundColor: '#eee',
-    },
-    headerTextContainer: {
-        flexDirection: 'column',
-    },
-    participantName: {
-        fontWeight: 'bold',
-        fontSize: 15,
-        color: '#222',
-    },
-    timeText: {
-        fontSize: 12,
-        color: '#888',
-    },
-    messageContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 18,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-        maxWidth: '80%',
-        alignSelf: 'flex-start',
-    },
-    messageText: {
-        fontSize: 16,
-        lineHeight: 20,
-        color: '#000',
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        padding: 16,
-        backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
-        alignItems: 'flex-end',
-    },
-    textInput: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        marginRight: 8,
-        maxHeight: 100,
-        fontSize: 16,
-        backgroundColor: '#f9f9f9',
-    },
-    sendButton: {
-        backgroundColor: '#007AFF',
-        borderRadius: 20,
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    sendButtonDisabled: {
-        backgroundColor: '#ccc',
-    },
-    sendButtonText: {
-        color: '#fff',
-        fontWeight: '600',
-        fontSize: 16,
-    },
-    editedLabel: {
-        fontSize: 12,
-        color: '#888',
-        marginLeft: 4,
-        fontStyle: 'italic',
-    },
-    reactionsRow: {
-        flexDirection: 'row',
-        marginTop: 8,
-        alignSelf: 'flex-start',
-    },
-    reactionBubble: {
-        backgroundColor: '#e0e0e0',
-        borderRadius: 15,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        marginRight: 5,
-    },
-    reactionText: {
-        fontSize: 12,
-        color: '#333',
     },
 }); 
