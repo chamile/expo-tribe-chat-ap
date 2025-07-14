@@ -60,13 +60,17 @@ export default function HomeScreen() {
             name: 'Unknown',
             avatar: 'https://randomuser.me/api/portraits/lego/1.jpg',
         };
+        const isEdited = item.updatedAt > item.sentAt;
         return (
             <View style={styles.messageWrapper}>
                 <View style={styles.messageHeader}>
                     <Image source={{ uri: participant.avatar }} style={styles.avatar} />
                     <View style={styles.headerTextContainer}>
                         <Text style={styles.participantName}>{participant.name}</Text>
-                        <Text style={styles.timeText}>{formatTime(item.sentAt)}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={styles.timeText}>{formatTime(item.sentAt)}</Text>
+                            {isEdited && <Text style={styles.editedLabel}> (edited)</Text>}
+                        </View>
                     </View>
                 </View>
                 <View style={styles.messageContainer}>
@@ -229,5 +233,11 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: '600',
         fontSize: 16,
+    },
+    editedLabel: {
+        fontSize: 12,
+        color: '#888',
+        marginLeft: 4,
+        fontStyle: 'italic',
     },
 }); 
