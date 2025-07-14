@@ -1,14 +1,14 @@
 import { MessagesApi } from '@/api-client/messages-api';
-import { TMessageJSON } from '@/api-client/types';
+import { MessageWithMeta } from '@/api-client/types';
 import { create } from 'zustand';
 
 export interface MessageState {
-  messages: TMessageJSON[];
+  messages: MessageWithMeta[];
   loading: boolean;
   error: string | null;
   fetchMessages: () => Promise<void>;
   addMessage: (text: string) => void;
-  postMessage: (text: string) => Promise<TMessageJSON | null>;
+  postMessage: (text: string) => Promise<MessageWithMeta | null>;
   clearError: () => void;
 }
 
@@ -31,11 +31,14 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   },
 
   addMessage: (text: string) => {
-    const newMessage: TMessageJSON = {
-      id: Date.now().toString(),
+    const newMessage: MessageWithMeta = {
+      uuid: Date.now().toString(),
       text: text.trim(),
-      isUser: true,
-      timestamp: new Date().toISOString(),
+      attachments: [],
+      authorUuid: '1f12596f-cee6-4f3c-9495-de1a17623a6b', // Demo: Alice
+      reactions: [],
+      sentAt: Date.now(),
+      updatedAt: Date.now(),
     };
     set((state) => ({
       messages: [newMessage, ...state.messages],
@@ -46,7 +49,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   postMessage: async (text: string) => {
     set({ loading: true, error: null });
     try {
-      const postedMessage = await MessagesApi.postMessage(text);
+      const postedMessage = await MessagesApi.postMessage(text) as MessageWithMeta;
       set((state) => ({
         messages: [postedMessage, ...state.messages],
         loading: false,

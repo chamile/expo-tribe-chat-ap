@@ -1,12 +1,12 @@
 import { apiClient } from './axios-instance';
 import { API_ENDPOINTS } from './config';
-import { TMessageJSON } from './types';
+import { MessageWithMeta } from './types';
 
 export class MessagesApi {
   
-  public static async getAllMessages(): Promise<TMessageJSON[]> {
+  public static async getAllMessages(): Promise<MessageWithMeta[]> {
     try {
-      const messages = await apiClient.get<TMessageJSON[]>(API_ENDPOINTS.MESSAGES.ALL);
+      const messages = await apiClient.get<MessageWithMeta[]>(API_ENDPOINTS.MESSAGES.ALL);
       return messages;
     } catch (error) {
       console.error('Failed to fetch messages:', error);
@@ -14,9 +14,10 @@ export class MessagesApi {
     }
   }
 
-  public static async postMessage(text: string): Promise<TMessageJSON> {
+
+  public static async postMessage(text: string): Promise<MessageWithMeta> {
     try {
-      const message = await apiClient.post<TMessageJSON>('/messages/new', { text });
+      const message = await apiClient.post<MessageWithMeta>('/messages/new', { text });
       return message;
     } catch (error) {
       console.error('Failed to post message:', error);

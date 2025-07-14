@@ -1,24 +1,40 @@
+import { MessageWithMeta } from '@/api-client/types';
 import { useMessageStore } from '@/stores';
 import React, { useEffect, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+// Mock participant info
+const participantMap: Record<string, { name: string; avatar: string }> = {
+    '1f12596f-cee6-4f3c-9495-de1a17623a6b': {
+        name: 'Alice',
+        avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
+    },
+    '3e0c96f5-371b-4e58-bf3d-11f3e77e8f15': {
+        name: 'Bob',
+        avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
+    },
+    // Add more mock participants as needed
+};
+
+function formatTime(timestamp: number) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
 export default function HomeScreen() {
     const { messages, loading, error, fetchMessages, postMessage } = useMessageStore();
     const [inputText, setInputText] = useState('');
 
-    // Fetch messages on component mount
     useEffect(() => {
         fetchMessages();
     }, [fetchMessages]);
 
-    // Console log messages when they change
     useEffect(() => {
         if (messages.length > 0) {
             console.log('Messages in store:', JSON.stringify(messages, null, 2));
         }
     }, [messages]);
 
-    // Console log loading and error states
     useEffect(() => {
         if (loading) {
             console.log('Loading messages from API...');
@@ -38,19 +54,27 @@ export default function HomeScreen() {
         }
     };
 
-    const renderMessage = ({ item }: { item: any }) => (
-        <View style={[
-            styles.messageContainer,
-            item.isUser ? styles.userMessage : styles.botMessage
-        ]}>
-            <Text style={[
-                styles.messageText,
-                item.isUser ? styles.userMessageText : styles.botMessageText
-            ]}>
-                {item.text}
-            </Text>
-        </View>
-    );
+    // For demo, treat messages as MessageWithMeta if possible
+    const renderMessage = ({ item }: { item: MessageWithMeta }) => {
+        const participant = participantMap[item.authorUuid] || {
+            name: 'Unknown',
+            avatar: 'https://randomuser.me/api/portraits/lego/1.jpg',
+        };
+        return (
+            <View style={styles.messageWrapper}>
+                <View style={styles.messageHeader}>
+                    <Image source={{ uri: participant.avatar }} style={styles.avatar} />
+                    <View style={styles.headerTextContainer}>
+                        <Text style={styles.participantName}>{participant.name}</Text>
+                        <Text style={styles.timeText}>{formatTime(item.sentAt)}</Text>
+                    </View>
+                </View>
+                <View style={styles.messageContainer}>
+                    <Text style={styles.messageText}>{item.text}</Text>
+                </View>
+            </View>
+        );
+    };
 
     return (
         <KeyboardAvoidingView
@@ -64,9 +88,9 @@ export default function HomeScreen() {
             </View>
 
             <FlatList
-                data={messages}
+                data={messages as MessageWithMeta[]}
                 renderItem={renderMessage}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.uuid}
                 style={styles.messagesList}
                 contentContainerStyle={styles.messagesContent}
                 showsVerticalScrollIndicator={false}
@@ -128,34 +152,46 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingBottom: 20,
     },
-    messageContainer: {
-        marginVertical: 4,
-        maxWidth: '80%',
+    messageWrapper: {
+        marginBottom: 16,
     },
-    userMessage: {
-        alignSelf: 'flex-end',
-        backgroundColor: '#007AFF',
+    messageHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    avatar: {
+        width: 36,
+        height: 36,
         borderRadius: 18,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
+        marginRight: 10,
+        backgroundColor: '#eee',
     },
-    botMessage: {
-        alignSelf: 'flex-start',
+    headerTextContainer: {
+        flexDirection: 'column',
+    },
+    participantName: {
+        fontWeight: 'bold',
+        fontSize: 15,
+        color: '#222',
+    },
+    timeText: {
+        fontSize: 12,
+        color: '#888',
+    },
+    messageContainer: {
         backgroundColor: '#fff',
         borderRadius: 18,
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderWidth: 1,
         borderColor: '#e0e0e0',
+        maxWidth: '80%',
+        alignSelf: 'flex-start',
     },
     messageText: {
         fontSize: 16,
         lineHeight: 20,
-    },
-    userMessageText: {
-        color: '#fff',
-    },
-    botMessageText: {
         color: '#000',
     },
     inputContainer: {
